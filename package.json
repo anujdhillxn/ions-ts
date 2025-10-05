@@ -1,6 +1,6 @@
 {
   "name": "ions-ts",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Vanilla Typescript library that adds a cool background with magnetic particles",
   "main": "dist/index.cjs",
   "module": "dist/index.js",

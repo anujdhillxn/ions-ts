@@ -250,26 +250,9 @@ export const createIonosphere = (canvasId: string, configOverrides: Partial<Part
     }
 
     resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
 
-    window.addEventListener('mousemove', (e) => {
-        const rect = canvas.getBoundingClientRect();
-        mouse.x = e.clientX - rect.left;
-        mouse.y = e.clientY - rect.top;
-    });
-
-    window.addEventListener('mouseleave', () => {
-        mouse.x = -1000;
-        mouse.y = -1000;
-    });
-
-    window.addEventListener('click', (e) => {
-        const rect = canvas.getBoundingClientRect();
-        for (let i = 0; i < 5; i++) nodes.push(new ParticleNode(e.clientX - rect.left, e.clientY - rect.top));
-    });
-
-    const spawnNode = (x?: number, y?: number) => {
-        if (nodes.length >= maxParticles) return;
+        const spawnNode = (limit: number, x?: number, y?: number) => {
+        if (nodes.length >= limit) return;
         nodes.push(new ParticleNode(x, y));
     }
 
@@ -278,7 +261,7 @@ export const createIonosphere = (canvasId: string, configOverrides: Partial<Part
         ctx.fillStyle = config.repaint;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         if (frameCount % config.spawnInterval === 0) {
-            spawnNode();
+            spawnNode(maxParticles);
         }
         nodes = nodes.filter(node => node.update(nodes));
         nodes.forEach(node => {
@@ -309,6 +292,24 @@ export const createIonosphere = (canvasId: string, configOverrides: Partial<Part
         handleParticleCountChange();
         updateParticleSpeed();
     }
+
+    window.addEventListener('resize', resizeCanvas);
+
+    window.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        mouse.x = e.clientX - rect.left;
+        mouse.y = e.clientY - rect.top;
+    });
+
+    window.addEventListener('mouseleave', () => {
+        mouse.x = -1000;
+        mouse.y = -1000;
+    });
+
+    window.addEventListener('click', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        for (let i = 0; i < 5; i++) spawnNode(maxParticles + 5, e.clientX - rect.left, e.clientY - rect.top);
+    });
 
     return { start, stop, updateConfig };
 }
