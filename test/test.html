@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<style>
+			body {
+				margin: 0;
+				font-family: "JetBrains Mono", monospace;
+				font-family: "Sora", sans-serif;
+                background-color: #000;
+			}
+			#controls {
+				position: fixed;
+				top: 20px;
+				right: 20px;
+				background: rgba(255, 255, 255, 0.1);
+				backdrop-filter: blur(10px);
+				padding: 20px;
+				border-radius: 8px;
+				color: white;
+				min-width: 250px;
+			}
+			#controls h3 {
+				margin: 0 0 15px 0;
+				font-size: 16px;
+			}
+			.control-group {
+				margin-bottom: 12px;
+			}
+			.control-group label {
+				display: block;
+				margin-bottom: 4px;
+				font-size: 12px;
+				opacity: 0.8;
+			}
+			.control-group input {
+				width: 100%;
+				padding: 6px;
+				border: 1px solid rgba(255, 255, 255, 0.2);
+				background: rgba(0, 0, 0, 0.3);
+				color: white;
+				border-radius: 4px;
+				box-sizing: border-box;
+			}
+			.control-group button {
+				width: 100%;
+				padding: 8px;
+				border: none;
+				background: rgba(100, 100, 255, 0.8);
+				color: white;
+				border-radius: 4px;
+				cursor: pointer;
+				font-weight: bold;
+			}
+			.control-group button:hover {
+				background: rgba(120, 120, 255, 0.9);
+			}
+			.control-group button.stop {
+				background: rgba(255, 100, 100, 0.8);
+			}
+			.control-group button.stop:hover {
+				background: rgba(255, 120, 120, 0.9);
+			}
+			canvas {
+				display: block;
+			}
+		</style>
+	</head>
+	<body>
+		<canvas id="canvas"></canvas>
+		<div id="controls">
+			<h3>Controls</h3>
+			<div class="control-group">
+				<button id="startBtn">Start</button>
+			</div>
+			<div class="control-group">
+				<button id="stopBtn" class="stop">Stop</button>
+			</div>
+			<div class="control-group">
+				<label>Repaint Color</label>
+				<input type="text" id="repaint" value="rgba(0, 0, 0, 1)" />
+			</div>
+			<div class="control-group">
+				<label>Trail Length</label>
+				<input type="number" id="trailLength" value="30" min="0" max="100" />
+			</div>
+			<div class="control-group">
+				<label>Trail Opacity</label>
+				<input type="number" id="trailOpacity" value="0.6" min="0" max="1" step="0.1" />
+			</div>
+			<div class="control-group">
+				<label>Repulsion</label>
+				<input type="number" id="repulsion" value="0.05" min="0" max="1" step="0.01" />
+			</div>
+			<div class="control-group">
+				<label>Attraction</label>
+				<input type="number" id="attraction" value="0.05" min="0" max="1" step="0.01" />
+			</div>
+			<div class="control-group">
+				<label>Particle Density</label>
+				<input type="number" id="density" value="0.00002" min="0" max="0.001" step="0.00001" />
+			</div>
+			<div class="control-group">
+				<button id="applyBtn">Apply Changes</button>
+			</div>
+		</div>
+	</body>
+</html>
+<script type="module" src="./test.js"></script>

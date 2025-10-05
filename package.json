@@ -1,11 +1,26 @@
 {
   "name": "ions-ts",
-  "version": "0.1.0",
+  "version": "1.1.0",
   "description": "Vanilla Typescript library that adds a cool background with magnetic particles",
-  "main": "dist/index.js",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist/*.d.ts",
+    "dist/index.js",
+    "dist/index.cjs"
+  ],
   "scripts": {
-    "build": "tsc"
+    "build": "tsc && esbuild src/index.ts --bundle --minify --format=esm --outfile=dist/index.js && esbuild src/index.ts --bundle --minify --format=cjs --outfile=dist/index.cjs",
+    "prepublishOnly": "npm run build",
+    "dev:vanillajs": "npm run build && echo Visit http://localhost:3000/test/test.html && npx serve ."
   },
   "repository": {
     "type": "git",
@@ -19,6 +34,7 @@
   "homepage": "https://github.com/anujdhillxn/ions-ts#readme",
   "devDependencies": {
     "@types/node": "^24.5.2",
+    "esbuild": "^0.25.10",
     "typescript": "^5.9.2"
   }
 }
