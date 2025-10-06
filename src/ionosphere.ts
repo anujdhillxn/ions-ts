@@ -1,12 +1,12 @@
 import { ParticleConfig, DEFAULT_CONFIG } from './config';
-import { random, fastNormalize, getParticleColor, areSimilarColors, getTime } from './utils';
+import { random, fastNormalize, getTime } from './utils';
 
 /**
  * Creates an interactive particle animation system on a canvas element.
  *
  * @param canvasId - The HTML id of the canvas element to render on
  * @param configOverrides - Optional configuration overrides. See ParticleConfig for all available options.
- * @returns Object with methods to control the animation: start(), stop(), updateConfig()
+ * @returns Object with methods to control the animation: start(), stop(), updateConfig(), destroy()
  *
  * @example
  * ```html
@@ -26,6 +26,9 @@ import { random, fastNormalize, getParticleColor, areSimilarColors, getTime } fr
  *
  * // Update config dynamically
  * ionosphere.updateConfig({ trailMaxLength: 100, repulsion: 0.1 });
+ *
+ * // Clean up resources
+ * ionosphere.destroy();
  * ```
  */
 export const createIonosphere = (canvasId: string, configOverrides: Partial<ParticleConfig> = {}) => {
@@ -40,14 +43,32 @@ export const createIonosphere = (canvasId: string, configOverrides: Partial<Part
         pulsePhase: number
         glowIntensity: number
         trail: { x: number, y: number }[]
-        constructor(x = Math.random() * canvas.width, y = Math.random() * canvas.height) {
+        charge: -1 | 0 | 1
+        constructor(x = Math.random() * canvas.width, y = Math.random() * canvas.height, charge?: -1 | 0 | 1) {
             this.pos = { x, y };
             const speed = random(...config.speedRange);
             const angle = Math.random() * 2 * Math.PI;
             this.velocity = { x: Math.cos(angle) * speed, y: Math.sin(angle) * speed };
             this.size = { current: 1, max: random(...config.sizeRange), growing: true };
             this.opacity = 1;
-            this.color = getParticleColor(config.satRange);
+
+            // Assign charge: use provided charge or randomly assign
+            if (charge !== undefined) {
+                this.charge = charge;
+            } else {
+                // Randomly assign -1 or 1 (no neutral particles for now)
+                this.charge = Math.random() < 0.5 ? -1 : 1;
+            }
+
+            // Set color based on charge
+            if (this.charge === -1) {
+                this.color = { hue: 240, sat: random(...config.satRange) }; // Blue
+            } else if (this.charge === 1) {
+                this.color = { hue: 0, sat: random(...config.satRange) }; // Red
+            } else {
+                this.color = { hue: 120, sat: random(...config.satRange) }; // Green for neutral
+            }
+
             this.pulsePhase = Math.random() * 2 * Math.PI;
             this.glowIntensity = random(...config.glowIntensityRange);
             this.trail = [];
@@ -78,10 +99,28 @@ export const createIonosphere = (canvasId: string, configOverrides: Partial<Part
             const dx = this.pos.x - mouse.x;
             const dy = this.pos.y - mouse.y;
             const distSq = dx * dx + dy * dy;
-            if (distSq < COMPUTED.avoidRadiusSq) {
+
+            // Impenetrable circle - push particle out if inside
+            if (distSq < COMPUTED.impenetrableRadiusSq && distSq > 0) {
                 const [nx, ny] = fastNormalize(dx, dy);
-                this.velocity.x += nx * config.cursorAvoidForce * timeElapsed;
-                this.velocity.y += ny * config.cursorAvoidForce * timeElapsed;
+                // Position particle at the edge of the impenetrable circle
+                this.pos.x = mouse.x + nx * config.cursorImpenetrableRadius;
+                this.pos.y = mouse.y + ny * config.cursorImpenetrableRadius;
+                // Zero out velocity component toward cursor
+                const velocityDotNormal = this.velocity.x * nx + this.velocity.y * ny;
+                if (velocityDotNormal < 0) {
+                    this.velocity.x -= velocityDotNormal * nx;
+                    this.velocity.y -= velocityDotNormal * ny;
+                }
+            }
+
+            // Charge-based interaction in outer radius
+            if (distSq < COMPUTED.avoidRadiusSq && distSq >= COMPUTED.impenetrableRadiusSq) {
+                const [nx, ny] = fastNormalize(dx, dy);
+                // Cursor charge interaction: same charge = repel (away from cursor), opposite = attract (toward cursor)
+                const chargeProduct = this.charge * config.cursorCharge;
+                this.velocity.x += nx * chargeProduct * config.cursorAvoidForce * timeElapsed;
+                this.velocity.y += ny * chargeProduct * config.cursorAvoidForce * timeElapsed;
             }
         }
         handleInteractions(allNodes: ParticleNode[]) {
@@ -93,13 +132,10 @@ export const createIonosphere = (canvasId: string, configOverrides: Partial<Part
                 const distSq = dx * dx + dy * dy;
                 if (distSq < COMPUTED.interactionRadiusSq) {
                     const [nx, ny] = fastNormalize(dx, dy);
-                    if (areSimilarColors(this.color.hue, other.color.hue)) {
-                        this.velocity.x -= nx * config.repulsion * timeElapsed;
-                        this.velocity.y -= ny * config.repulsion * timeElapsed;
-                    } else {
-                        this.velocity.x += nx * config.attraction * timeElapsed;
-                        this.velocity.y += ny * config.attraction * timeElapsed;
-                    }
+                    // Charge interaction: chargeProduct > 0 (same) = repel, < 0 (opposite) = attract, = 0 (neutral) = no interaction
+                    const chargeProduct = this.charge * other.charge;
+                    this.velocity.x -= nx * chargeProduct * config.attraction * timeElapsed;
+                    this.velocity.y -= ny * chargeProduct * config.attraction * timeElapsed;
                 }
                 if (distSq < COMPUTED.maxDistanceSq && this.size.current > 0) {
                     const finalOpacity = (1 - distSq / COMPUTED.maxDistanceSq) * config.connectionOpacity * Math.min(this.opacity, other.opacity);
@@ -107,7 +143,7 @@ export const createIonosphere = (canvasId: string, configOverrides: Partial<Part
                     ctx.save();
                     const gradient = ctx.createLinearGradient(this.pos.x, this.pos.y, other.pos.x, other.pos.y);
                     gradient.addColorStop(0, `hsla(${this.color.hue}, ${this.color.sat}%, 70%, ${0})`);
-                    if (areSimilarColors(this.color.hue, other.color.hue)) {
+                    if (this.charge === other.charge) {
                         gradient.addColorStop(1, `hsla(${this.color.hue}, 100%, 100%, ${config.connectionOpacity * 0.5})`);
                     }
                     else {
@@ -213,6 +249,7 @@ export const createIonosphere = (canvasId: string, configOverrides: Partial<Part
         maxSpeedSq: config.maxSpeed * config.maxSpeed,
         interactionRadiusSq: config.interactionRadius * config.interactionRadius,
         avoidRadiusSq: config.cursorAvoidRadius * config.cursorAvoidRadius,
+        impenetrableRadiusSq: config.cursorImpenetrableRadius * config.cursorImpenetrableRadius,
         maxDistanceSq: 0, //will be calculated based on canvas size
     }
 
@@ -220,6 +257,7 @@ export const createIonosphere = (canvasId: string, configOverrides: Partial<Part
         COMPUTED.maxSpeedSq = config.maxSpeed * config.maxSpeed;
         COMPUTED.interactionRadiusSq = config.interactionRadius * config.interactionRadius;
         COMPUTED.avoidRadiusSq = config.cursorAvoidRadius * config.cursorAvoidRadius;
+        COMPUTED.impenetrableRadiusSq = config.cursorImpenetrableRadius * config.cursorImpenetrableRadius;
     }
 
     const updateConnectionDistance = () => {
@@ -293,23 +331,45 @@ export const createIonosphere = (canvasId: string, configOverrides: Partial<Part
         updateParticleSpeed();
     }
 
-    window.addEventListener('resize', resizeCanvas);
+    const handleResize = () => resizeCanvas();
 
-    window.addEventListener('mousemove', (e) => {
+    const handleMouseMove = (e: MouseEvent) => {
         const rect = canvas.getBoundingClientRect();
         mouse.x = e.clientX - rect.left;
         mouse.y = e.clientY - rect.top;
-    });
+    };
 
-    window.addEventListener('mouseleave', () => {
+    const handleMouseLeave = () => {
         mouse.x = -1000;
         mouse.y = -1000;
-    });
+    };
 
-    window.addEventListener('click', (e) => {
+    const handleClick = (e: MouseEvent) => {
         const rect = canvas.getBoundingClientRect();
         for (let i = 0; i < 5; i++) spawnNode(maxParticles + 5, e.clientX - rect.left, e.clientY - rect.top);
-    });
+    };
 
-    return { start, stop, updateConfig };
+    const destroy = () => {
+        // Stop animation
+        stop();
+
+        // Remove event listeners
+        window.removeEventListener('resize', handleResize);
+        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('mouseleave', handleMouseLeave);
+        window.removeEventListener('click', handleClick);
+
+        // Clear canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Clear all nodes
+        nodes = [];
+    }
+
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseleave', handleMouseLeave);
+    window.addEventListener('click', handleClick);
+
+    return { start, stop, updateConfig, destroy };
 }

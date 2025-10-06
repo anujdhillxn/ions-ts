@@ -34,7 +34,8 @@
 				font-size: 12px;
 				opacity: 0.8;
 			}
-			.control-group input {
+			.control-group input,
+			.control-group select {
 				width: 100%;
 				padding: 6px;
 				border: 1px solid rgba(255, 255, 255, 0.2);
@@ -102,7 +103,18 @@
 				<input type="number" id="density" value="0.00002" min="0" max="0.001" step="0.00001" />
 			</div>
 			<div class="control-group">
+				<label>Cursor Charge</label>
+				<select id="cursorCharge">
+					<option value="-1">-1 (Blue/Negative)</option>
+					<option value="0">0 (Neutral)</option>
+					<option value="1" selected>1 (Red/Positive)</option>
+				</select>
+			</div>
+			<div class="control-group">
 				<button id="applyBtn">Apply Changes</button>
+			</div>
+			<div class="control-group">
+				<button id="destroyBtn" class="stop">Destroy</button>
 			</div>
 		</div>
 	</body>

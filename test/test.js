@@ -31,7 +31,14 @@ window.addEventListener('DOMContentLoaded', () => {
             repulsion: parseFloat(document.getElementById('repulsion').value),
             attraction: parseFloat(document.getElementById('attraction').value),
             particleDensity: parseFloat(document.getElementById('density').value),
+            cursorCharge: parseInt(document.getElementById('cursorCharge').value),
         };
         ionosphere.updateConfig(config);
+    });
+
+    // Destroy button
+    const destroyBtn = document.getElementById('destroyBtn');
+    destroyBtn.addEventListener('click', () => {
+        ionosphere.destroy();
     });
 });

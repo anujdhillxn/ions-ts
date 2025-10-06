@@ -56,6 +56,12 @@ export interface ParticleConfig {
     /** Force applied when avoiding cursor. Default: 10 */
     cursorAvoidForce: number;
 
+    /** Charge of the cursor: -1 (blue/negative), 0 (neutral), 1 (red/positive). Default: 1 */
+    cursorCharge: -1 | 0 | 1;
+
+    /** Radius of impenetrable circle around cursor (pixels). Default: 50 */
+    cursorImpenetrableRadius: number;
+
     // ===== Particle Interactions =====
 
     /** Interaction radius between particles (pixels). Default: 60 */
@@ -139,7 +145,9 @@ export const DEFAULT_CONFIG: ParticleConfig = {
     boundaryMargin: 0,
     bounceRetention: 0.8,
     cursorAvoidRadius: 100,
-    cursorAvoidForce: 10,
+    cursorAvoidForce: 0.1,
+    cursorCharge: 1,
+    cursorImpenetrableRadius: 50,
     interactionRadius: 60,
     repulsion: 0.05,
     attraction: 0.05,
