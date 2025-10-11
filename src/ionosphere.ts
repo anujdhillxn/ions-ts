@@ -324,11 +324,11 @@ export const createIonosphere = (canvasId: string, configOverrides: Partial<Part
     const updateConfig = (configUpdates: Partial<ParticleConfig>) => {
         config = { ...config, ...configUpdates };
 
-        // Recalculate computed values
-        updateComputedValues();
-        updateConnectionDistance();
-        handleParticleCountChange();
-        updateParticleSpeed();
+        // TODO: Recalculate computed values
+        // updateComputedValues();
+        // updateConnectionDistance();
+        // handleParticleCountChange();
+        // updateParticleSpeed();
     }
 
     const handleResize = () => resizeCanvas();
